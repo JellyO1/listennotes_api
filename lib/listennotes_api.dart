@@ -40,8 +40,14 @@ class ListenNotesAPI {
 
   /// Gets all of podcast genres.
   Future<List<Genre>> getGenres() async {
-    var response = await dio.get<List<Genre>>(listenApiUrl.endpoint('genres'));
-    return response.data;
+    List<Genre> genres = List();
+
+    var response = await dio.get(listenApiUrl.endpoint('genres'));
+
+    for (var genre in response.data["genres"])
+      genres.add(Genre.fromJson(genre));
+
+    return genres;
   }
 
   Future<PodcastFull> getPodcastDetail({ @required String podcastId, int episodePage, Sort sort = Sort.RECENT_FIRST }) async {
@@ -52,9 +58,9 @@ class ListenNotesAPI {
     if(episodePage != null)
       queryParameters.putIfAbsent('next_episode_pub_date', () => episodePage);
 
-    var response = await dio.get<PodcastFull>(listenApiUrl.endpoint('podcasts/$podcastId'), queryParameters: queryParameters);
+    var response = await dio.get(listenApiUrl.endpoint('podcasts/$podcastId'), queryParameters: queryParameters);
 
-    return response.data;
+    return PodcastFull.fromJson(response.data);
   }
 
   Future<PodcastPage> getBestPodcasts({ @required int page, int genre, String region, bool safeForWork = true }) async {
@@ -65,9 +71,12 @@ class ListenNotesAPI {
     if(genre != null)
       queryParameters.putIfAbsent("genre_id", () => genre);
 
-    var response = await dio.get<PodcastPage>(listenApiUrl.endpoint('best_podcasts'), queryParameters: queryParameters);
+    var response = await dio.get(listenApiUrl.endpoint('best_podcasts'), queryParameters: queryParameters);
 
-    return response.data;
+    if(response.statusCode == 200)
+      return PodcastPage.fromJson(response.data);
+    else
+      throw response.statusCode;
   }
 }
 
